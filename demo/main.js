@@ -31,9 +31,9 @@ function logging_action() {
         logging.enableResponseLog();
         log.debug("enabling response log");
     }
-    if (req.data.info) {
+    if (request.data.info) {
         log.info("Hello world!");
-    } else if (req.data.error) {
+    } else if (request.data.error) {
         try {
             foo.bar.moo;
         } catch (e) {
@@ -50,9 +50,9 @@ function logging_action() {
 
 // demo for continuation support
 function continuation_action() {
-    if (req.params.helma_continuation == null) {
+    if (request.params.helma_continuation == null) {
         // set query param so helma knows to switch rhino optimization level to -1
-        res.redirect(req.path + "?helma_continuation=");
+        response.redirect(request.path + "?helma_continuation=");
     }
     // render first page
     render('skins/continuation.html', {
@@ -62,7 +62,7 @@ function continuation_action() {
     });
     Continuation.nextPage();
     // render second page
-    var message = req.data.message;
+    var message = request.data.message;
     render('skins/continuation.html', {
         title: "Continuations (Page 2 of 3)",
         skin: "step2",

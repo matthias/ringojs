@@ -105,7 +105,7 @@ public class GlobalFunctions {
                 break;
             }
             Object value = scope.get(property, scope);
-            if (value == null || value == Scriptable.NOT_FOUND) {
+            if (value == Scriptable.NOT_FOUND) {
                 throw new IllegalArgumentException("Property '" + property +
                         "' is not defined in module " + moduleName);
             }

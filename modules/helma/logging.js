@@ -42,10 +42,10 @@ var __shared__ = true;
     this.enableResponseLog = function() {
         // onLogEvent() callback is called by org.helma.util.RhinoAppender
         rhino.addCallback("onLogEvent", "responseLog", function(msg, javaStack, scriptStack) {
-            if (!global.res) {
+            if (!global.response) {
                 return;
             }
-            var buffer = res.getBuffer("responseLog");
+            var buffer = response.getBuffer("responseLog");
             buffer.write("<div class=\"helma-debug-line\" style=\"background: #fc3;");
             buffer.write("color: black; border-top: 1px solid black;\">");
             buffer.write(msg);
@@ -61,8 +61,8 @@ var __shared__ = true;
             return null;
         });
         // add an onResponse callback to automatically flush the response log
-        rhino.addCallback("onResponse", "responseLogFlusher", function(res) {
-            if (res.status == 200 || res.status >= 400) {
+        rhino.addCallback("onResponse", "responseLogFlusher", function(response) {
+            if (response.status == 200 || response.status >= 400) {
                 self.flushResponseLog();
             }
         });
@@ -86,8 +86,8 @@ var __shared__ = true;
      * response has been generated.
      */
     this.flushResponseLog = function() {
-        var buffer = res.getBuffer("responseLog");
-        res.write(buffer);
+        var buffer = response.getBuffer("responseLog");
+        response.write(buffer);
         buffer.reset();
         return null;
     };

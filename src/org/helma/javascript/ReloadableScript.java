@@ -170,10 +170,6 @@ public class ReloadableScript {
      */
     public synchronized Scriptable load(Scriptable prototype, String moduleName, Context cx)
             throws JavaScriptException, IOException {
-        Map<String,Scriptable> modules = (Map<String,Scriptable>) cx.getThreadLocal("modules");
-        if (modules.containsKey(moduleName)) {
-            return modules.get(moduleName);
-        }
         Script script = getScript(cx);
         ModuleScope module = moduleScope;
         // FIXME: caching of shared modules causes code updates to
@@ -187,7 +183,6 @@ public class ReloadableScript {
         } else {
             module = new ModuleScope(moduleName, resource, repository, prototype);
         }
-        modules.put(moduleName, module);
         script.exec(cx, module);
         module.setChecksum(checksum);
         moduleScope = (module.get("__shared__", module) == Boolean.TRUE) ?

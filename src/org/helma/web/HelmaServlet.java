@@ -24,6 +24,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.concurrent.*;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Helma servlet class used to access helma from a web server.
@@ -94,12 +96,14 @@ public class HelmaServlet extends HttpServlet {
             throws ServletException, IOException {
         Future<Status> future = pool.submit(new Callable<Status>() {
             public Status call() {
-                Request request = new Request(req);
+                Map<String,Object> env = new HashMap<String,Object>();
                 Response response = new Response(res);
-                Session session = new Session(req);
+                env.put("request",  new Request(req));
+                env.put("response",  response);
+                env.put("session",  new Session(req));
                 Status status = new Status();
                 try {
-                    engine.invoke(null, "handleRequest", request, response, session);
+                    engine.invoke("main", "handleRequest", env);
                     response.close();
                 } catch (RedirectException redir) {
                     status.redirect = redir.getMessage();

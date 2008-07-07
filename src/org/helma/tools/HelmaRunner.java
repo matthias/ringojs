@@ -32,7 +32,7 @@ public class HelmaRunner {
         }
         HelmaConfiguration config = new HelmaConfiguration(null, modulePath);
         RhinoEngine engine = new RhinoEngine(config);
-        engine.invoke(config.getMainModule("main"), "main", RhinoEngine.EMPTY_ARGS);
+        engine.invoke(config.getMainModule("main"), "main", null);
     }
 
     public static void printUsage() {

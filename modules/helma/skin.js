@@ -120,16 +120,16 @@ function Skin(mainSkin, subSkins, parentSkin) {
                     evaluateMacro(part, context);
                 }
             } else {
-                res.write(part);
+                response.write(part);
             }
         }
     };
 
     var evaluateMacro = function(macro, context) {
-        var length = res.buffer.length;
+        var length = response.buffer.length;
         var value = evaluateExpression(macro, context, '_macro');
         var visibleValue = isVisible(value);
-        var wroteSomething = res.buffer.length > length;
+        var wroteSomething = response.buffer.length > length;
 
             // check if macro has a filter, if so extra work ahead
         var filter = macro.filter;
@@ -140,7 +140,7 @@ function Skin(mainSkin, subSkins, parentSkin) {
                 value = "";
             }
             if (wroteSomething) {
-                var written = res.buffer.truncate(length);
+                var written = response.buffer.truncate(length);
                 if (visibleValue) {
                     value = written + value;
                 } else {
@@ -149,17 +149,17 @@ function Skin(mainSkin, subSkins, parentSkin) {
             }
             value = evaluateExpression(filter, filters, '_filter', value);
             visibleValue = isVisible(value);
-            wroteSomething = res.buffer.length > length;
+            wroteSomething = response.buffer.length > length;
             filter = filter.filter;
         }
         if (visibleValue || wroteSomething) {
-            res.buffer.insert(length, macro.getParameter('prefix') || '');
+            response.buffer.insert(length, macro.getParameter('prefix') || '');
             if (visibleValue) {
-                res.write(value);
+                response.write(value);
             }
-            res.write(macro.getParameter('suffix') || '');
+            response.write(macro.getParameter('suffix') || '');
         } else {
-            res.write(macro.getParameter('default') || '');
+            response.write(macro.getParameter('default') || '');
         }
     };
 

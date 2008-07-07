@@ -50,7 +50,7 @@ Continuation.nextId = function() {
  */
 Continuation.nextUrl = function(id) {
     id = id || Continuation.nextId();
-    return req.path + "?helma_continuation=" + id;
+    return request.path + "?helma_continuation=" + id;
 };
 
 /**
@@ -96,7 +96,7 @@ var getCallback = function(id) {
  * and return null.
  */
 var resume = function() {
-    var continuationId = req.params.helma_continuation;
+    var continuationId = request.params.helma_continuation;
     if (continuationId && session.data.continuation) {
         var continuation = session.data.continuation[continuationId];
         if (continuation) {
