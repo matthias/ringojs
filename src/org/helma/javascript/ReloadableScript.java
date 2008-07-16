@@ -36,8 +36,16 @@ public class ReloadableScript {
     final Resource resource;
     final Repository repository;
     final RhinoEngine engine;
+    // the checksum of the underlying resource or repository when
+    // the script was last compiled
     long checksum = -1;
+    // true if module scope is shared
+    boolean shared;
+    // the compiled script
     Script script;
+    // any exception that may have been thrown during compilation.
+    // we keep this around in order to be able to rethrow without trying
+    // to recompile if the underlying resource or repository hasn't changed
     Exception exception = null;
     // the loaded module scope is cached for shared modules
     ModuleScope moduleScope = null;
@@ -80,26 +88,38 @@ public class ReloadableScript {
             throws JavaScriptException, IOException {
         if (!isUpToDate()) {
             if (resource == null) {
-                return getMultiScript(cx);
-            }
-            if (!resource.exists()) {
-                throw new FileNotFoundException(resource + " not found or not readable");
-            }
-            try {
-                exception = null;
-                script = cx.compileReader(resource.getReader(), resource.getPath(), 1, null);
-            } catch (Exception x) {
-                exception = x;
-            } finally {
-                checksum = resource.lastModified();
+                script = getComposedScript(cx);
+            } else {
+                script = getSimpleScript(cx);
             }
         }
-
         if (exception != null) {
             throw exception instanceof WrappedException ?
                 (WrappedException) exception : new WrappedException(exception);
         }
+        return script;
+    }
 
+    /**
+     * Get a script from a single script file.
+     * @param cx the current Context
+     * @throws JavaScriptException if an error occurred compiling the script code
+     * @throws IOException if an error occurred reading the script file
+     * @return the compiled and up-to-date script
+     */
+    protected synchronized Script getSimpleScript(Context cx)
+            throws JavaScriptException, IOException {
+        if (!resource.exists()) {
+            throw new FileNotFoundException(resource + " not found or not readable");
+        }
+        try {
+            exception = null;
+            script = cx.compileReader(resource.getReader(), resource.getPath(), 1, null);
+        } catch (Exception x) {
+            exception = x;
+        } finally {
+            checksum = resource.lastModified();
+        }
         return script;
     }
 
@@ -113,7 +133,8 @@ public class ReloadableScript {
      * @throws IOException if an error occurred reading the script file
      * @return the compiled and up-to-date script
      */
-    protected synchronized Script getMultiScript(Context cx) throws JavaScriptException, IOException {
+    protected synchronized Script getComposedScript(Context cx)
+            throws JavaScriptException, IOException {
         if (!repository.exists()) {
             throw new FileNotFoundException(repository + " not found or not readable");
         }
@@ -168,19 +189,23 @@ public class ReloadableScript {
      * @throws JavaScriptException if an error occurred evaluating the script file
      * @throws IOException if an error occurred reading the script file
      */
-    public synchronized Scriptable load(Scriptable prototype, String moduleName, Context cx)
+    protected synchronized Scriptable load(Scriptable prototype, String moduleName, Context cx)
             throws JavaScriptException, IOException {
+        // check if we already came across the module in the current context/request
         Map<String,Scriptable> modules = (Map<String,Scriptable>) cx.getThreadLocal("modules");
         if (modules.containsKey(moduleName)) {
             return modules.get(moduleName);
         }
         Script script = getScript(cx);
         ModuleScope module = moduleScope;
-        // FIXME: caching of shared modules causes code updates to
-        // go unnoticed for indirectly loaded modules!
         if (module != null) {
-            // use cached scope unless script has been reloaded
-            if (module.getChecksum() == checksum) {
+            // Reuse cached scope for shared modules.
+            // If any shared module has been updated, the force_reload flag is set
+            // in the context. This is necessary to catch changes in shared modules
+            // loaded by other shared modules.
+            boolean forceReload = cx.getThreadLocal("force_reload") == Boolean.TRUE;
+            if (module.getChecksum() == checksum && !forceReload) {
+                modules.put(moduleName, module);
                 return module;
             }
             module.delete("__shared__");
@@ -190,20 +215,26 @@ public class ReloadableScript {
         modules.put(moduleName, module);
         script.exec(cx, module);
         module.setChecksum(checksum);
-        moduleScope = (module.get("__shared__", module) == Boolean.TRUE) ?
-                module : null;
+        shared = module.get("__shared__", module) == Boolean.TRUE;
+        moduleScope = shared ? module : null;
         return module;
     }
 
+    /**
+     * Return true if this represents a module shared among all threads/contexts
+     * @return true of this script represents a shared module
+     */
+    public boolean isShared() {
+        return shared;
+    }
 
     /**
      * Checks if the main file or any of the files it includes were updated 
      * since the script was last parsed and evaluated.
      * @return true if none of the included files has been updated since
      * we last checked.
-     * @throws IOException an I/O exception occurred during the check
      */
-    protected boolean isUpToDate() throws IOException {
+    protected boolean isUpToDate() {
         if (resource == null) {
             return repository.getChecksum() == checksum;
         } else {
