@@ -134,6 +134,7 @@ importModule("helma.logging", "logging");
          main : res.pop()
       };
       
+      res.push();
       var layoutPath = this.getLayoutPath();
       if (layoutPath && getResource(layoutPath).exists()) {
          var renderer = this.templating.getRenderer("skin");
@@ -141,6 +142,8 @@ importModule("helma.logging", "logging");
       } else {
          res.write(context.content.main);
       }
+      res.content = res.pop();
+      return res.content;
    }   
 
    // private functions
