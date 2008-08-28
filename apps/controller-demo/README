@@ -1,0 +1,10 @@
+Author: Matthias Platzer
+Version: Aida 0.1
+
+== controller-demo
+
+This application demonstrates the usage of controllers.
+Take a look at the /app/controllers directory.
+
+Also see:
+http://github.com/matthias/aida/wikis/controllers
