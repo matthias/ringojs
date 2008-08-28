@@ -8,10 +8,10 @@ importModule("aida.controller.request");
 importModule("aida.config");
 aida.config.setEnvironment("development");
 
-// main method called to start application
-function main() {
+// called to start application
+if (__name__ == '__main__') {
    app.start({ staticDir: aida.config.STATIC_DIR });
-   logger.info("Started Aida on helma-ng." + aida.config.STATIC)
+   logger.info("Started Aida on helma-ng.")
 }
 
 // handleRequest will be called by helma-ng on every HTTP request.
