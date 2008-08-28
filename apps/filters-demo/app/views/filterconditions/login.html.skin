@@ -1,0 +1,5 @@
+<html><head></head><body>
+   <form action="/filterconditions/login">
+      Your name: <input type="text" name="user" /> <input type="submit" value="Go" />
+   </form>
+</body></html>
