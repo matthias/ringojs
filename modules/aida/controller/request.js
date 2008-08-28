@@ -50,6 +50,8 @@ logging.setConfig(getResource('config/environments/development/log4j.properties'
       try {
          req.route.handler.call(controller);
          if (!res.calledRender) controller.render();
+         controller.applyAfterFilters(res.content);
+         res.write(res.content);
       } catch (e) {
          error(e);
       } finally {
