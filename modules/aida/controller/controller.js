@@ -32,10 +32,12 @@ logging.setConfig(getResource('config/environments/development/log4j.properties'
    this.getController = function(name) {
       if (typeof name === "string") {
          var className = (name.match(/^(.*)Controller$/)) ? name : getClassNameFromName(name);
-         constructor = importModule("app.controllers." + name + "_controller")[className];
-         if (!constructor) {
-            throw new Error("Couldn't find controller " + getClassNameFromName(constructor) + " in app/controllers/" + constructor + "_controller");
-         }         
+         try {
+            constructor = importModule("app.controllers." + name + "_controller")[className];            
+         } catch (err) {
+            logger.info("Couldn't find controller " + getClassNameFromName(name) + " in app/controllers/" + constructor + "_controller");
+            return;            
+         }
       }
       // var proto = Object.clone(constructor.prototype);
       constructor.prototype = importModule("aida.controller");
@@ -52,7 +54,8 @@ logging.setConfig(getResource('config/environments/development/log4j.properties'
     */
    this.getControllerInstance = function(name) {
       var constructor = this.getController(name);
-      return new constructor();
+      if (constructor) return new constructor();
+      else return;
    }   
    
    /**
