@@ -7,3 +7,9 @@ run.jar
 shell.jar
 lib/
 classes/
+
+
+apps/demo-app/
+apps/demo-app2/
+modules/aida/controller/_controller.js
+modules/javascript/inheritance.js
