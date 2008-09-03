@@ -98,7 +98,7 @@ importModule("helma.logging", "logging");
       if (!res.contentType) res.contentType = Formats.getMimeType(req.route.format);
       
       var action = options.action || req.route.action;
-      var context = prepareContext.call(controller, options.context);
+      var context = prepareContext.call(this, options.context);
 
       res.pop(); // the current res.buffer is stored in context.content;
       delete options.context;
@@ -161,8 +161,8 @@ importModule("helma.logging", "logging");
       result = Object.extend(
          result,
          {
-            "this" : controller,
-            controller : controller.prototype,
+            "this" : this,
+            controller : this.prototype,
             flash : req.flash,
             content : res.buffer,
             logger : logger, 

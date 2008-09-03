@@ -28,21 +28,39 @@ logging.setConfig(getResource('config/environments/development/log4j.properties'
       global.session = session;      
       
       if (!controllerName) controllerName = "root";
+      logger.debug("[" + controllerName + "] handleRequest " + req.path);
+      
       var routeSet = routing.loadRoutes(controllerName).routeSet;
-      req.route = req.route || routeSet.recognizeRequest(req);   
-      if (!req.route) return notfound();
+      logger.debug("use routeSet " + routeSet + " from " + controllerName);
+
+      req.route = req.route || routeSet.recognizeRequest(req);
+      
+      if (req.route) {
+         logger.debug("found matching route " + req.route);
+      } else {
+         logger.debug("couldn't find a matching route. Return 404.");
+         return notfound();
+      }
       Object.extend(req.data, req.route.params);
       Object.extend(req.params, req.route.params);
 
-      global.controller = getControllerInstance(req.route.controllerName);
-      if (!controller) return notfound();
-
+      var controller = getControllerInstance(req.route.controllerName);
+      if (controller) {
+         logger.debug("use controller instance " + controller + " for " + req.route.controllerName);
+      } else {
+         logger.debug("couldn't find a controller for " + req.route.controllerName + ". Return 404.");
+         return notfound();
+      } 
+      
       req.route.handler = controller.getAction(req.route);
-      if (!req.route.handler) {
+      if (controller) {
+         logger.debug("found an action handler for this route.");
+      } else {
+         logger.debug("couldn't find an action handler for this routes. Return 404.");
          return notfound();
       }
-      
-      controller.actionName = req.route.action;
+            
+      req.actionName = req.route.action;
       res.content = {};
 
       if (!controller.beforeFiltersPass()) return;

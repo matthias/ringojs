@@ -5,7 +5,7 @@ importModule("helma.logging", "logging");
    var logger = logging.getLogger(__name__);
 
    render = function(templatePath, context) {
-      logger.info("templatePath:"+templatePath+", context:"+context);
+      logger.debug("Render skin at " + templatePath);
       helma.skin.render(templatePath, context);
    }
    

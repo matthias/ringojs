@@ -11,7 +11,6 @@ importFromModule("helma.file", "File");
       loadHelpers(this, module, namespace);
    }
 
-
    /**
     * Loads and mount helpers from a file.
     * Loads the helper file located at <tt>app/helpers/$name_helpers.js</tt> and
@@ -42,5 +41,5 @@ importFromModule("helma.file", "File");
    
       return helpers;
    }
-   
+
 }).call(this);

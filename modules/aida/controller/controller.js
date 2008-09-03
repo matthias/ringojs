@@ -30,6 +30,8 @@ logging.setConfig(getResource('config/environments/development/log4j.properties'
    */
    
    this.getController = function(name) {
+      var constructor;
+      
       if (typeof name === "string") {
          var className = (name.match(/^(.*)Controller$/)) ? name : getClassNameFromName(name);
          try {
