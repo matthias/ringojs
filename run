@@ -1,8 +1,4 @@
 #!/bin/sh
-<<<<<<< HEAD:apps/hibernate-blog/run
-
-java -jar ../../run.jar $1
-=======
 # Shell script for running Helma NG with a JDK-like virtual machine.
 
 # uncomment to set JAVA_HOME variable
@@ -12,7 +8,7 @@ java -jar ../../run.jar $1
 JAVA_OPTIONS="-server -Xmx256m"
 
 # adjust to set path of Helma NG installation
-HELMA_HOME="../.."
+HELMA_HOME="."
 
 
 ###########################################################
@@ -34,4 +30,3 @@ fi
 
 
 $JAVA_CMD $JAVA_OPTIONS -jar $HELMA_HOME/run.jar $1
->>>>>>> 217b2abadc342631fafa1ecfc53e3f04db8b3674:apps/hibernate-blog/run
