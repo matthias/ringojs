@@ -1,4 +1,4 @@
-importFromModule("formats", "Formats");
+importFromModule("aida.controller.formats", "Formats");
 importModule("aida.config", "config")
 importModule("templating");
 importFromModule("layout", "*");

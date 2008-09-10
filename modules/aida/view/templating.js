@@ -1,4 +1,4 @@
-importFromModule("formats", "Formats");
+importFromModule("aida.controller.formats", "Formats");
  
 importModule("helma.logging", "logging");
 importModule("aida.config", "config");

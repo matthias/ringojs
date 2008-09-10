@@ -35,9 +35,9 @@ logging.setConfig(getResource('config/environments/development/log4j.properties'
       if (typeof name === "string") {
          var className = (name.match(/^(.*)Controller$/)) ? name : getClassNameFromName(name);
          try {
-            constructor = importModule("app.controllers." + name + "_controller")[className];            
+            constructor = importModule("app.controllers." + name + "_controller")[className];
          } catch (err) {
-            logger.info("Couldn't find controller " + getClassNameFromName(name) + " in app/controllers/" + constructor + "_controller");
+            logger.info("Couldn't find controller " + getClassNameFromName(name) + " in app/controllers/" + name + "_controller");
             return;            
          }
       }

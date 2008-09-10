@@ -38,7 +38,7 @@ logging.setConfig(getResource('config/environments/development/log4j.properties'
       if (req.route) {
          logger.debug("found matching route " + req.route);
       } else {
-         logger.debug("couldn't find a matching route. Return 404.");
+         logger.error("couldn't find a matching route. Return 404.");
          return notfound();
       }
       Object.extend(req.data, req.route.params);
@@ -48,7 +48,7 @@ logging.setConfig(getResource('config/environments/development/log4j.properties'
       if (controller) {
          logger.debug("use controller instance " + controller + " for " + req.route.controllerName);
       } else {
-         logger.debug("couldn't find a controller for " + req.route.controllerName + ". Return 404.");
+         logger.error("couldn't find a controller for " + req.route.controllerName + ". Return 404.");
          return notfound();
       } 
       
@@ -56,7 +56,7 @@ logging.setConfig(getResource('config/environments/development/log4j.properties'
       if (controller) {
          logger.debug("found an action handler for this route.");
       } else {
-         logger.debug("couldn't find an action handler for this routes. Return 404.");
+         logger.error("couldn't find an action handler for this routes. Return 404.");
          return notfound();
       }
             
