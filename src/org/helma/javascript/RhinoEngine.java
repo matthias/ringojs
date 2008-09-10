@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.helma.repository.FileResource;
 import org.helma.repository.Repository;
 import org.helma.repository.Resource;
+import org.helma.repository.Trackable;
 import org.helma.tools.HelmaConfiguration;
 import org.helma.tools.launcher.HelmaClassLoader;
 import org.helma.util.*;
@@ -43,13 +44,14 @@ public class RhinoEngine {
     List<Repository>                   repositories;
     ScriptableObject                   topLevelScope;
     List<String>                       commandLineArgs;
-    Map<String, ReloadableScript>      compiledScripts    = new HashMap<String, ReloadableScript>();
-    Map<String, ReloadableScript>      interpretedScripts = new HashMap<String, ReloadableScript>();
+    Map<Trackable, ReloadableScript>      compiledScripts    = new HashMap<Trackable, ReloadableScript>();
+    Map<Trackable, ReloadableScript>      interpretedScripts = new HashMap<Trackable, ReloadableScript>();
     Set<ReloadableScript>              sharedScripts      = new HashSet<ReloadableScript>();
     Map<String, Map<String, Function>> callbacks          = new HashMap<String, Map<String,Function>>();
     AppClassLoader                     loader             = new AppClassLoader();
     HelmaWrapFactory                   wrapFactory        = new HelmaWrapFactory();
     HelmaContextFactory                contextFactory     = new HelmaContextFactory(this);
+    ModuleScope                        mainScope          = null;
 
     public static final Object[]       EMPTY_ARGS         = new Object[0];
     protected boolean                  isInitialized      = false;
@@ -168,15 +170,21 @@ public class RhinoEngine {
         Context cx = contextFactory.enterContext();
         try {
         	Object retval;
+            Map<Trackable,ReloadableScript> scripts = cx.getOptimizationLevel() == -1 ?
+                    interpretedScripts : compiledScripts;
             commandLineArgs = Arrays.asList(scriptArgs);
             Resource resource = findResource(scriptName, null);
             if (!resource.exists()) {
             	resource = new FileResource(new File(scriptName));
             }
+            if (!resource.exists()) {
+                String moduleName = scriptName.replace('.', File.separatorChar) + ".js";
+                resource = findResource(moduleName, null);
+            }
             ReloadableScript script = new ReloadableScript(resource, this);
-            Scriptable scope = new ModuleScope("__main__", resource, 
-                    resource.getRepository(), topLevelScope);
-            retval = script.evaluate(scope, cx);
+            scripts.put(resource, script);
+            mainScope = new ModuleScope("__main__", resource, topLevelScope);
+            retval = script.evaluate(mainScope, cx);
         	if (retval instanceof Wrapper) {
         		return ((Wrapper) retval).unwrap();
         	}
@@ -243,12 +251,14 @@ public class RhinoEngine {
         try {
             Repository repository = repositories.get(0);
             Resource resource = repository.getResource("<shell>");
+            Scriptable parentScope = mainScope != null ? mainScope : topLevelScope;
+            ModuleScope scope = new ModuleScope("<shell>", resource, parentScope);
             try {
-                getScript("helma.shell").evaluate(topLevelScope, cx);
+                getScript("helma.shell").evaluate(scope, cx);
             } catch (Exception x) {
                 log.error("Warning: couldn't load module 'helma.shell'", x);
             }
-            return new ModuleScope("<shell>", resource, repository, topLevelScope);
+            return scope;
         } finally {
             Context.exit();
         }
@@ -327,27 +337,26 @@ public class RhinoEngine {
     public ReloadableScript getScript(String moduleName, Repository localPath)
             throws JavaScriptException, IOException {
         Context cx = Context.getCurrentContext();
-        Map<String,ReloadableScript> scripts = cx.getOptimizationLevel() == -1 ?
+        Map<Trackable,ReloadableScript> scripts = cx.getOptimizationLevel() == -1 ?
                 interpretedScripts : compiledScripts;
-        ReloadableScript script = scripts.get(moduleName);
-        if (script == null) {
-            boolean isWildcard = moduleName.endsWith(".*");
-            if (isWildcard) {
-                String repositoryName = moduleName
-                        .substring(0, moduleName.length() - 2)
-                        .replace('.', File.separatorChar);
-                Repository repository = findRepository(repositoryName, localPath);
-                script = new ReloadableScript(repository, this);
-                if (repository.exists()) {
-                    scripts.put(moduleName, script);
-                }
-            } else {
-                String resourceName = moduleName.replace('.', File.separatorChar) + ".js";
-                Resource resource = findResource(resourceName, localPath);
-                script = new ReloadableScript(resource, this);
-                if (resource.exists()) {
-                    scripts.put(moduleName, script);
-                }
+        ReloadableScript script;
+        Trackable source;
+        boolean isWildcard = moduleName.endsWith(".*");
+        if (isWildcard) {
+            String repositoryName = moduleName
+                    .substring(0, moduleName.length() - 2)
+                    .replace('.', File.separatorChar);
+            source = findRepository(repositoryName, localPath);
+        } else {
+            String resourceName = moduleName.replace('.', File.separatorChar) + ".js";
+            source = findResource(resourceName, localPath);
+        }
+        if (scripts.containsKey(source)) {
+            script = scripts.get(source);
+        } else {
+            script = new ReloadableScript(source, this);
+            if (source.exists()) {
+                scripts.put(source, script);
             }
         }
         return script;
@@ -413,13 +422,7 @@ public class RhinoEngine {
      * @return the resource
      */
     public Resource getResource(String path) {
-        for (Repository repo: repositories) {
-            Resource res = repo.getResource(path);
-            if (res.exists()) {
-                return res;
-            }
-        }
-        return repositories.get(0).getResource(path);
+        return configuration.getResource(path);
     }
 
     /**
@@ -428,13 +431,7 @@ public class RhinoEngine {
      * @return the resource
      */
     public Repository getRepository(String path) {
-        for (Repository repo: repositories) {
-            Repository repository = repo.getChildRepository(path);
-            if (repository.exists()) {
-                return repository;
-            }
-        }
-        return repositories.get(0).getChildRepository(path);
+        return configuration.getRepository(path);
     }
 
     /**
@@ -444,13 +441,7 @@ public class RhinoEngine {
      * @return a list of all nested child resources
      */
     public List<Resource> getResources(String path) {
-        for (Repository repo: repositories) {
-            Repository repository = repo.getChildRepository(path);
-            if (repository.exists()) {
-                return repo.getAllResources();
-            }
-        }
-        return repositories.get(0).getResources(path);
+        return configuration.getResources(path);
     }
 
     /**

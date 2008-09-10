@@ -19,7 +19,7 @@ package org.helma.tools;
 import java.util.Arrays;
 
 import org.helma.javascript.RhinoEngine;
-import org.helma.util.StringUtils;
+import org.helma.repository.FileRepository;
 
 public class HelmaRunner {
 
@@ -27,6 +27,7 @@ public class HelmaRunner {
         String scriptName = null;
         String[] scriptArgs = new String[0];
         boolean interactive = false;
+        boolean debug = false;
 
         if (args != null && args.length > 0) {
             int i;
@@ -40,7 +41,12 @@ public class HelmaRunner {
             		return;
             	} else if ("--interactive".equals(arg) || "-i".equals(arg)) {
             		interactive = true;
-            	}
+                } else if ("--debug".equals(arg) || "-d".equals(arg)) {
+                    debug = true;
+                } else {
+                    printUsage();
+                    System.exit(1);
+                }
             }
             if (i < args.length) {
             	scriptName = args[i++];
@@ -50,13 +56,14 @@ public class HelmaRunner {
             }
         }
 
-        HelmaConfiguration config = new HelmaConfiguration();
+        FileRepository home = new FileRepository(System.getProperty("helma.home", "."));
+        HelmaConfiguration config = new HelmaConfiguration(home, scriptName);
         RhinoEngine engine = new RhinoEngine(config);
         if (scriptName != null) {
         	engine.runScript(scriptName, scriptArgs);
         }
         if (scriptName == null || interactive) {
-        	new HelmaShell(engine).run();
+            new HelmaShell(engine, debug).run();
         }
     }
 
@@ -64,7 +71,8 @@ public class HelmaRunner {
         System.out.println("Usage:");
         System.out.println("  java -jar run.jar [option] ... [file] [arg] ...");
         System.out.println("Options:");
-        System.out.println("  -i, --interactive  : Start shell after script file has run");
+        System.out.println("  -d, --debug        : Print stack traces for shell errors");
         System.out.println("  -h, --help         : Display this help message");
+        System.out.println("  -i, --interactive  : Start shell after script file has run");
     }
 }

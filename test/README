@@ -1,8 +1,3 @@
-How to Run the Unit Tests
-=========================
+This is the ever growing Helma NG JavaScript test suite. 
 
-  helma-ng> ./run.sh test.js
-
-  resp.
-
-  helma-ng> run test.js
+  java -jar run.jar test/all.js
