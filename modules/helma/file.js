@@ -737,14 +737,6 @@ File.toString = function() {
 
 File.separator = java.io.File.separator;
 
-<<<<<<< HEAD:modules/helma/file.js
-for (var i in File) {
-   if (i!="prototype") File.dontEnum(i);      
-}
-for (var i in File.prototype) {
-   File.prototype.dontEnum(i);   
-}
-=======
 /**
  * Create a new empty temporary file in the default temporary-file directory.
  * @param {String} prefix the prefix of the temporary file; must be at least three characters long
@@ -760,4 +752,3 @@ for (var i in File)
    if (i != "prototype") File.dontEnum(i);
 for (var i in File.prototype)
    File.prototype.dontEnum(i);
->>>>>>> hannes:modules/helma/file.js
