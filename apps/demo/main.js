@@ -1,34 +1,38 @@
-importModule('helma.app', 'app');
-importFromModule('helma.simpleweb', 'handleRequest');
-importFromModule('helma.skin', 'render');
-importModule('helma.continuation');
-importModule('helma.logging', 'logging');
-logging.enableResponseLog();
-var log = logging.getLogger(__name__);
+var webapp = loadModule('helma.webapp');
+var handleRequest = webapp.handleRequest;
+var render = loadModule('helma.skin').render;
+// loadModule('helma.continuation');
+var helma = {
+    logging : loadModule('helma.logging')
+}
+helma.logging.enableResponseLog();
+var log = helma.logging.getLogger(__name__);
 
-importModule('webmodule', 'mount.point');
+var mount = {
+    point: loadModule('webmodule')
+}
 
 // the main action is invoked for http://localhost:8080/
-function main_action() {
-    render('skins/index.html', { title: 'Welcome to Helma NG' });
+function index(req, res) {
+    res.render('skins/index.html', { title: 'Welcome to Helma NG' });
 }
 
 // demo for skins, macros, filters
-function skins_action() {
+function skins(req, res) {
     var context = {
         title: 'Skin Demo',
         name: 'Luisa',
         names: ['Benni', 'Emma', 'Luca', 'Selma']
     };
-    render('skins/skins.html', context);
+    res.render('skins/skins.html', context);
 }
 
 // demo for log4j logging
-function logging_action() {
+function logging(req, res) {
     // make sure responselog is enabled
-    var hasResponseLog = logging.responseLogEnabled();
+    var hasResponseLog = helma.logging.responseLogEnabled();
     if (!hasResponseLog) {
-        logging.enableResponseLog();
+        helma.logging.enableResponseLog();
         log.debug("enabling response log");
     }
     if (req.data.info) {
@@ -40,44 +44,82 @@ function logging_action() {
             log.error(e, e.rhinoException);
         }
     }
-    render('skins/logging.html', { title: "Logging Demo" });
+    res.render('skins/logging.html', { title: "Logging Demo" });
     if (!hasResponseLog) {
         log.debug("disabling response log");
-        logging.disableResponseLog();
+        helma.logging.disableResponseLog();
     }
-    logging.flushResponseLog();
+    helma.logging.flushResponseLog();
 }
 
 // demo for continuation support
-function continuation_action() {
-    if (req.params.helma_continuation == null) {
-        // set query param so helma knows to switch rhino optimization level to -1
-        res.redirect(req.path + "?helma_continuation=");
-    }
+function continuation(req, res) {
+
+    // local data - this is the data that is shared between resuming and suspension
+    var data = {};
+    var pages = ["start", "name", "favorite food", "favorite animal", "result"];
+    // to have only one continuation per user just give the pages fixed ids
+    // var pageIds = [0, 1, 2, 3, 4];
+    // to have continuations created dynamically start with empty page ids
+    var pageIds = [];
+
+    // mark start of continuation code. We never step back earlier than this
+    // otherwise local data would be re-initialized
+    pageIds[0] = Continuation.startId(req);
+    [req, res] = Continuation.markStart(req, res, pageIds[0]);
+    // render intro page
+    log.info("running post makestart")
+    renderPage(0);
+    log.info("running first page")
     // render first page
-    render('skins/continuation.html', {
-        title: "Continuations Demo",
-        skin: "step1",
-        href: Continuation.nextUrl()
-    });
-    Continuation.nextPage();
+    renderPage(1)
     // render second page
-    var message = req.data.message;
-    render('skins/continuation.html', {
-        title: "Continuations (Page 2 of 3)",
-        skin: "step2",
-        href: Continuation.nextUrl()
-    });
-    Continuation.nextPage();
+    renderPage(2);
     // render third page
-    render('skins/continuation.html', {
-        title: "Continuations (last Page)",
-        skin: "step3",
-        message: message
-    });
+    renderPage(3);
+    // render overview page
+    if (!data.name) renderPage(1);
+    renderPage(4);
+
+    // the local function to do the actual work
+    function renderPage(id) {
+        var previous = pages[id - 1]
+        if (req.isPost() && previous) {
+           data[previous] = req.params[previous];
+        }
+        if (id < pages.length - 1) {
+            pageIds[id + 1] = Continuation.nextId(req, pageIds[id + 1]);
+            if (id < 1) {
+                res.render('skins/continuation.html', {
+                    title: "Welcome",
+                    skin: "start",
+                    data: data,
+                    forward: Continuation.getUrl(req, pageIds[id + 1])
+                });
+            } else {
+                res.render('skins/continuation.html', {
+                    title: "Question " + id,
+                    skin: "mask",
+                    input: pages[id],
+                    data: data,
+                    value: data[pages[id]],
+                    back: Continuation.getUrl(req, pageIds[id - 1]),
+                    forward: Continuation.getUrl(req, pageIds[id + 1])
+                });
+            }
+            [req, res] = Continuation.nextPage(req, pageIds[id + 1]);
+        } else {
+            res.render('skins/continuation.html', {
+                title: "Thanks!",
+                skin: "result",
+                data: data,
+                back: Continuation.getUrl(req, pageIds[id - 1])
+            });
+        }
+    }
 }
 
 // main method called to start application
 if (__name__ == "__main__") {
-    app.start();
+    webapp.start();
 }

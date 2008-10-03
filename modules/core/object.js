@@ -28,10 +28,10 @@ __shared__ = true;
  * @param One or more property names or index numbers
  */
 Object.prototype.dontEnum = function() {
-    var rhino = new JavaImporter(org.mozilla.javascript);
+    var rhino = org.mozilla.javascript;
     var DONTENUM = rhino.ScriptableObject.DONTENUM;
     var length = arguments.length;
-    var cx = rhino.Context.currentContext;
+    var cx = rhino.Context.getCurrentContext();
     var wrapped = cx.wrapFactory.wrapAsJavaObject(cx, global, this, null);
     for (var i = 0; i < length; i++) {
         var prop = arguments[i];
@@ -41,7 +41,6 @@ Object.prototype.dontEnum = function() {
         try {
             wrapped.setAttributes(prop, DONTENUM);
         } catch (e) {
-            var log = importModule('helma.logging').getLogger(__name__);
             log.error("Error in dontEnum for property " + prop, e.rhinoException);
         }
     }
@@ -53,10 +52,10 @@ Object.prototype.dontEnum = function() {
  * @param One or more property names or index numbers
  */
 Object.prototype.readOnly = function() {
-    var rhino = new JavaImporter(org.mozilla.javascript);
+    var rhino = org.mozilla.javascript;
     var READONLY = rhino.ScriptableObject.READONLY;
     var length = arguments.length;
-    var cx = rhino.Context.currentContext;
+    var cx = rhino.Context.getCurrentContext();
     var wrapped = cx.wrapFactory.wrapAsJavaObject(cx, global, this, null);
     for (var i = 0; i < length; i++) {
         var prop = arguments[i];
@@ -154,6 +153,23 @@ Object.prototype.dump = function(recursive) {
     }
     res.write(endList);
     return;
+};
+
+
+/**
+ * Creates a new object as the as the keywise union of the provided objects.
+ * Whenever a key exists in a later object that already existed in an earlier
+ * object, the according value of the earlier object takes precedence.
+ */
+Object.merge = function() {
+    var result = {};
+    for (var i = arguments.length; i > 0; --i) {
+        var obj = arguments[i - 1];
+        for (var property in obj) {
+            result[property] = obj[property];
+        }
+    }
+    return result;
 };
 
 

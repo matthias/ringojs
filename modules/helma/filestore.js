@@ -1,8 +1,7 @@
-importModule('core.JSON');
-importFromModule('helma.file', 'File');
-importFromModule('helma.functional', 'partial');
-importModule('helma.logging', 'logging');
-var log = logging.getLogger(__name__);
+loadModule('core.JSON');
+var File = loadModule('helma.file').File;
+var partial = loadModule('helma.functional').partial;
+var log = loadModule('helma.logging').getLogger(__name__);
 
 var __shared__ = true;
 
@@ -121,8 +120,6 @@ function Store(path) {
         if (typeof ctor.name != "string") {
            throw new Error("constructor must not be an anonymous function");
         }
-        // add class to registry
-        typeRegistry[ctor.name] = ctor;
         // install filter, all, and get methods on constructor
         ctor.list = partial(list, ctor.name);
         ctor.all = partial(getAll, ctor.name);
@@ -130,6 +127,8 @@ function Store(path) {
         ctor.save = partial(save);
         ctor.remove = partial(remove);
         ctor.store = this;
+        // add class to registry
+        typeRegistry[ctor.name] = ctor;
     };
 
     this.getRegisteredType = function(name) {
@@ -181,7 +180,7 @@ function Store(path) {
        return list;
     }
 
-    var get = function(type, id) {
+    var get = this.get = function(type, id) {
        var dir = new File(base, type);
        var file = new File(dir, id);
 
@@ -311,8 +310,7 @@ var isKey = function(value) {
 }
 
 var isStorable = function(value) {
-    return value instanceof JSAdapter
-            && typeof value._type == 'string';
+    return typeof value._type == 'string';
 }
 
 var isPersistentStorable = function(value) {

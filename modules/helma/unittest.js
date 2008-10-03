@@ -16,7 +16,7 @@ var __shared__ = true;
     * @returns The loaded module
     */
    var loadTestModule = function(module) {
-      return importModule(module, "__currentTest__");
+      return loadModule(module, "__currentTest__");
    };
 
    /**
@@ -1037,3 +1037,10 @@ var __shared__ = true;
    };
    
 }).call(this);
+
+
+if (__name__ == '__main__') {
+   for each (var test in system.args) {
+      run(test);
+   }
+}

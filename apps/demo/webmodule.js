@@ -1,10 +1,9 @@
 // a simple web app/module
-importFromModule('helma.skin', 'render');
 
-function main_action() {
+function index(req, res) {
     var context = {
         title: 'Module Demo',
         href: req.path
     };
-    render('skins/modules.html', context);
+    res.render('skins/modules.html', context);
 }

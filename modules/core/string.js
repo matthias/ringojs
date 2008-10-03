@@ -1,3 +1,4 @@
+<<<<<<< HEAD:modules/core/string.js
 /*
  * Helma License Notice
  *
@@ -707,7 +708,6 @@ String.join = function(str1, str2, glue) {
         return str2;
     return str1;
 };
-
 
 // prevent any newly added properties from being enumerated
 for (var i in String)
